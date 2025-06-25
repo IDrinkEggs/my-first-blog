@@ -1,0 +1,155 @@
+{%load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Draggable Balls</title>
+        <style>
+                body { margin: 0; background-color: white; }
+                input { width: 80px; margin-top: 5px; }
+                #ui-panel { position: relative; z-index: 10; background: #f8f8f8; width: 800px; height: 35px; }
+                #canvas-wrapper { position: relative; width: 800px; height: 800px; }
+                canvas { position: absolute; left: 0; top: 0; display: block; }
+                #background { z-index: 0; background-color: black; }
+                #foreground { z-index: 1; cursor: default; }
+        </style>
+</head>
+<body>
+        <div id="canvas-wrapper">
+                <canvas id="background"></canvas>
+                <canvas id="foreground"></canvas>
+        </div>
+        <div id="ui-panel">
+                <label>InitY(px): <input type="number" id="initY" value="500"></label>
+                <label>VelY(px/f): <input type="number" id="initV" value="-20"></label>
+                <label>VelX(px/f): <input type="number" id="initVX" value="1"></label>
+                <button id="launchBtn">FIRE!</button>
+        </div>
+
+        <script type="module">
+                import { Ball } from "{% static 'js/ball.js' %}";
+
+                const canvasW = 800;
+                const canvasH = 800;
+                const gravity = 0.4;
+
+                const bgCanvas = document.getElementById("background");
+                const fgCanvas = document.getElementById("foreground");
+                const bgCtx = bgCanvas.getContext("2d");
+                const fgCtx = fgCanvas.getContext("2d");
+                bgCanvas.width = fgCanvas.width = canvasW;
+                bgCanvas.height = fgCanvas.height = canvasH;
+
+                const input = {
+                        mouseDown: false,
+                        mouseUp: false,
+                        mousePressed: false,
+                        mouseX: 0,
+                        mouseY: 0
+                };
+
+                const balls = [
+                        new Ball(fgCtx, 50, 100),
+                        new Ball(fgCtx, 200, 300),
+                        new Ball(fgCtx, 350, 200)
+                ];
+                let selectedBall = balls[0];
+
+                function drawGrid() {
+                        bgCtx.strokeStyle = "lightgray";
+                        for (let i = 0; i < canvasH; i += 90) {
+                                bgCtx.beginPath();
+                                bgCtx.moveTo(0, i);
+                                bgCtx.lineTo(canvasW, i);
+                                bgCtx.stroke();
+                        }
+                }
+
+                function updateState() {
+                        for (const ball of balls) {
+                                ball.update(gravity, canvasW, canvasH);
+                        }
+                }
+
+                
+
+                function frame() {
+                        updateState();
+                        // 各ボールの描画
+                        for (const ball of balls) {
+                                const otherBallsList = balls.filter(b => b !== ball);
+                                ball.draw(otherBallsList);        
+                        }
+
+                        // HUD 表示（選択中のみ）
+                        if (selectedBall) {
+                                selectedBall.drawHUD(input.mouseX, input.mouseY);
+                        }
+
+                        clearInputFlags();
+                        requestAnimationFrame(frame);
+                }
+
+                function clearInputFlags() {
+                        input.mouseDown = false;
+                        input.mouseUp = false;
+                }
+
+                // イベント
+                fgCanvas.addEventListener("mousedown", (e) => {
+                        input.mouseDown = true;
+                        input.mousePressed = true;
+                        input.mouseX = e.clientX;
+                        input.mouseY = e.clientY;
+
+                        for (let i = balls.length - 1; i >= 0; i--) {
+                                if (balls[i].isMouseInside(input.mouseX, input.mouseY)) {
+                                        selectedBall = balls[i];
+                                        selectedBall.startDrag(input.mouseX, input.mouseY);
+                                        fgCanvas.style.cursor = "grabbing";
+                                        break;
+                                }
+                        }
+                });
+
+                fgCanvas.addEventListener("mouseup", (e) => {
+                        input.mouseUp = true;
+                        input.mousePressed = false;
+                        input.mouseX = e.clientX;
+                        input.mouseY = e.clientY;
+                        if (selectedBall?.isDragging) {
+                                selectedBall.endDrag(input.mouseX, input.mouseY);
+                                fgCanvas.style.cursor = "default";
+                        }
+                });
+
+                fgCanvas.addEventListener("mousemove", (e) => {
+                        input.mouseX = e.clientX;
+                        input.mouseY = e.clientY;
+                        if (selectedBall?.isDragging && input.mousePressed) {
+                                selectedBall.drag(input.mouseX, input.mouseY);
+                        }
+                });
+
+                document.getElementById("launchBtn").addEventListener("click", () => {
+                        if (!selectedBall) return;
+                        const initY = parseFloat(document.getElementById("initY").value);
+                        const initV = parseFloat(document.getElementById("initV").value);
+                        const initVX = parseFloat(document.getElementById("initVX").value);
+
+                        if (!isNaN(initY)) selectedBall.y = initY;
+                        if (!isNaN(initV)) selectedBall.velocityY = initV;
+                        if (!isNaN(initVX)) selectedBall.velocityX = initVX;
+
+                        selectedBall.isDragging = false;
+                        selectedBall.isFalling = true;
+                        selectedBall.needsRedraw = true;
+                        fgCanvas.style.cursor = "default";
+                });
+
+                drawGrid();
+                requestAnimationFrame(frame);
+        </script>
+</body>
+</html>

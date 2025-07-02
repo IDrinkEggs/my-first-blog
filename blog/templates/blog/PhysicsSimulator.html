@@ -66,18 +66,18 @@
                         }
                 }
 
-                function updateState() {
+                function updateState(otherBallsList = []) {
                         for (const ball of balls) {
-                                ball.update(gravity, canvasW, canvasH);
+                                ball.update(gravity, canvasW, canvasH, otherBallsList);
                         }
                 }
 
                 function frame() {
-                        updateState();
                         // 各ボールの描画
                         for (const ball of balls) {
                                 const otherBallsList = balls.filter(b => b !== ball);
-                                ball.draw(otherBallsList);        
+                                updateState(otherBallsList);
+                                ball.draw();   
                         }
 
                         // HUD 表示（選択中のみ）

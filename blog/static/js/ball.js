@@ -18,6 +18,7 @@ export class Ball {
             this.prevTime = performance.now();
             this.needsRedraw = true;
             this.isCollding = false;
+            this.other;
     }
 
     NeedsRedraw() {
@@ -28,14 +29,8 @@ export class Ball {
             }
     }
 
-    draw(others = []) {
+    draw() {
             if (!this.needsRedraw) {
-                    return;
-            }
-            if (others.some(ball => this.CheckColision(ball))){
-                    this.needsRedraw = false;
-                    this.isCollding = true
-                    console.log("Colliding!");
                     return;
             }
             this.isCollding = false;
@@ -46,24 +41,34 @@ export class Ball {
             this.needsRedraw = true;
     }
 
-    update(gravity, canvasW, canvasH) {
+    update(gravity, canvasW, canvasH, others = []) {
+            if (others.some(ball => this.CheckColision(ball))){
+                    this.isCollding = true
+                    this.velocityX = 0;
+                    this.velocityY = 0;
+                    console.log("Colliding!");
+                }
+
             if (this.isFalling) {
-                    if (this.y >= canvasH - this.size) { //if on floor
+
+                if (this.y >= canvasH - this.size) { //if on floor
                             this.y = canvasH - this.size;
                             this.isFalling = false;
                             this.velocityY = 0;
                             this.velocityX = 0;
-                    }else if (this.isCollding){
-                            this.velocityX = 0;
-                            this.velocityY = 0;
-                    } else { //if free fall
+                }
+                if(this.isCollding){
+                        return;
+                }
+        
+                     else { //if free fall
                             this.velocityY += gravity;
                             this.y += this.velocityY;
                             this.x += this.velocityX;
                             this.y = Math.floor(this.y);
                             this.x = Math.max(0, Math.min(canvasW - this.size, Math.floor(this.x)));
                     }
-            }
+                }
     }
 
     drawHUD(mouseX, mouseY) {
@@ -106,18 +111,22 @@ export class Ball {
     }
 
     drag(mouseX, mouseY) {
-            if (this.isCollding){
-
-            }else{
-                    this.x = mouseX - this.offsetX;
-                    this.y = mouseY - this.offsetY;
-            }
-            if (performance.now() - this.prevTime > 100) {
-                    this.prevX = mouseX;
-                    this.prevY = mouseY;
-                    this.prevTime = performance.now();
-            }
-            this.needsRedraw = true;
+            
+        var nx = mouseX - this.offsetX;
+        var ny = mouseY - this.offsetY;
+        if (performance.now() - this.prevTime > 100) { //Checks how much it would move every 100 miliseconds
+                this.prevX = mouseX;
+                this.prevY = mouseY;
+                this.prevTime = performance.now();
+        }
+        
+        if(this.isCollding){
+                this.other.x += nx-this.x;
+                this.other.y += ny-this.y;
+        }
+        this.x = nx;
+        this.y = ny;
+        this.needsRedraw = true;
     }
 
     endDrag(mouseX, mouseY) {
@@ -148,11 +157,14 @@ export class Ball {
                     (otherBallx1 < ballx35 && ballx35 < otherBallx2) && (otherBally1 < this.y && this.y < otherBally2) ||
                     (otherBallx1 < this.x && this.x < otherBallx2) && (otherBally1 < bally35 && bally35 < otherBally2) ||
                     (otherBallx1 < ballx35 && ballx35 < otherBallx2) && (otherBally1 < bally35 && bally35 < otherBally2)){
-                return true;
+                        this.other = otherBall;
+                        return true;
             }
             else {
                     return false;
             }
     }
+
+
 
 }

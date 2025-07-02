@@ -32,7 +32,7 @@ export class Ball {
             if (!this.needsRedraw) {
                     return;
             }
-            if (this.isDragging && others.some(ball => this.CheckColision(ball))){
+            if (others.some(ball => this.CheckColision(ball))){
                     this.needsRedraw = false;
                     this.isCollding = true
                     console.log("Colliding!");
@@ -144,11 +144,11 @@ export class Ball {
             //         return true;
             // }
             if (
-                    (otherBallx1 <= this.x && this.x <= otherBallx2) && (otherBally1 <= this.y && this.y <= otherBally2) ||
-                    (otherBallx1 <= ballx35 && ballx35 <= otherBallx2) && (otherBally1 <= this.y && this.y <= otherBally2) ||
-                    (otherBallx1 <= this.x && this.x <= otherBallx2) && (otherBally1 <= bally35 && bally35 <= otherBally2) ||
-                    (otherBallx1 <= ballx35 && ballx35 <= otherBallx2) && (otherBally1 <= bally35 && bally35 <= otherBally2)){
-                    return true;
+                    (otherBallx1 < this.x && this.x < otherBallx2) && (otherBally1 < this.y && this.y < otherBally2) ||
+                    (otherBallx1 < ballx35 && ballx35 < otherBallx2) && (otherBally1 < this.y && this.y < otherBally2) ||
+                    (otherBallx1 < this.x && this.x < otherBallx2) && (otherBally1 < bally35 && bally35 < otherBally2) ||
+                    (otherBallx1 < ballx35 && ballx35 < otherBallx2) && (otherBally1 < bally35 && bally35 < otherBally2)){
+                return true;
             }
             else {
                     return false;

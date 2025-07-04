@@ -32,7 +32,7 @@
 
                 const canvasW = 800;
                 const canvasH = 800;
-                const gravity = 0.4;
+                const gravity = 0.1;
 
                 const bgCanvas = document.getElementById("background");
                 const fgCanvas = document.getElementById("foreground");
@@ -54,6 +54,8 @@
                         new Ball(fgCtx, 200, 300),
                         new Ball(fgCtx, 350, 200)
                 ];
+                window.balls = balls;
+                
                 let selectedBall = balls[0];
 
                 function drawGrid() {
@@ -68,7 +70,7 @@
 
                 function updateState(otherBallsList = []) {
                         for (const ball of balls) {
-                                ball.update(gravity, canvasW, canvasH, otherBallsList);
+                                ball.update(gravity, canvasW, canvasH, input.mouseX, input.mouseY, otherBallsList);
                         }
                 }
 

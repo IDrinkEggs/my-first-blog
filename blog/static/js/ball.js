@@ -13,9 +13,12 @@ export class Ball {
                 //For erasing the old images of the Ball instance
                 this.oldX = x;
                 this.oldY = y;
+                this.deltaX;
+                this.deltaY;
 
                 //Time handling variables
                 this.prevTime = performance.now();
+                this.deltaT;
                 
                 //mouse handling variables
                 this.offsetX = 0;
@@ -55,12 +58,12 @@ export class Ball {
         update(gravity, canvasW, canvasH, mouseX, mouseY, others = []) {
 
                 //Velocity calculation
-                // const now = performance.now();
-                // const deltaY = mouseY - this.prevY;
-                // const deltaX = mouseX - this.prevX;
-                // const deltaT = (now - this.prevTime) / 3;//why divide by 3?
-                // this.velocityY = deltaT > 0 ? deltaY / deltaT : 0;
-                // this.velocityX = deltaT > 0 ? deltaX / deltaT : 0;
+                const now = performance.now();
+                this.deltaY = mouseY - this.prevY;
+                this.deltaX = mouseX - this.prevX;
+                this.deltaT = (now - this.prevTime) / 3;//why divide by 3?
+                // this.velocityY = this.deltaT > 0 ? this.deltaY / this.deltaT : 0;
+                // this.velocityX = this.deltaT > 0 ? this.deltaX / this.deltaT : 0;
 
 
                 if (others.some(ball => this.CheckColision(ball))) {
@@ -145,8 +148,8 @@ export class Ball {
                 if (this.isColliding) {
                         //If the ball gets moved perfectly verticle/horizontal while it's colliding
                         //then the prevX/Y becomes 0, which would result in a NAN value because there division by 0.
-                        this.other.velocityX += (deltaX > 0 || deltaT > 0) ? deltaX / deltaT : 0;
-                        this.other.velocityY += (deltaY > 0 || deltaT > 0) ? deltaY / deltaT : 0;
+                        this.other.velocityX += (this.deltaX > 0 || this.deltaT > 0) ? this.deltaX / this.deltaT : 0;
+                        this.other.velocityY += (this.deltaY > 0 || this.deltaT > 0) ? this.deltaY / this.deltaT : 0;
                 }
                 this.x = nx;
                 this.y = ny;
@@ -155,12 +158,12 @@ export class Ball {
 
         endDrag(mouseX, mouseY) {
                 const now = performance.now();
-                const deltaY = mouseY - this.prevY;
-                const deltaX = mouseX - this.prevX;
-                const deltaT = (now - this.prevTime) / 3;
-                //If deltaT isn't negative, get Velocity. Other wise Velocity is 0
-                this.velocityY = deltaT > 0 ? deltaY / deltaT : 0;
-                this.velocityX = deltaT > 0 ? deltaX / deltaT : 0;
+                this.deltaY = mouseY - this.prevY;
+                this.deltaX = mouseX - this.prevX;
+                this.deltaT = (now - this.prevTime) / 3;
+                //If this.deltaT isn't negative, get Velocity. Other wise Velocity is 0
+                this.velocityY = this.deltaT > 0 ? this.deltaY / this.deltaT : 0;
+                this.velocityX = this.deltaT > 0 ? this.deltaX / this.deltaT : 0;
                 this.isDragging = false;
                 this.isFalling = true;
                 this.needsRedraw = true;

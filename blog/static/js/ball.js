@@ -62,8 +62,6 @@ export class Ball {
                 this.deltaY = mouseY - this.prevY;
                 this.deltaX = mouseX - this.prevX;
                 this.deltaT = (now - this.prevTime) / 3;//why divide by 3?
-                // this.velocityY = this.deltaT > 0 ? this.deltaY / this.deltaT : 0;
-                // this.velocityX = this.deltaT > 0 ? this.deltaX / this.deltaT : 0;
                 this.y += this.velocityY;
                 this.x += this.velocityX;
 
@@ -153,12 +151,12 @@ export class Ball {
                         this.prevY = mouseY;
                         this.prevTime = performance.now();
                 }
-                // if (this.isColliding) {
-                //         //If the ball gets moved perfectly verticle/horizontal while it's colliding
-                //         //then the prevX/Y becomes 0, which would result in a NAN value because there division by 0.
-                //         this.other.velocityX += (this.deltaX > 0 || this.deltaT > 0) ? this.deltaX / this.deltaT : 0;
-                //         this.other.velocityY += (this.deltaY > 0 || this.deltaT > 0) ? this.deltaY / this.deltaT : 0;
-                // }
+                if (this.isColliding) {
+                        //If the ball gets moved perfectly verticle/horizontal while it's colliding
+                        //then the prevX/Y becomes 0, which would result in a NAN value because there division by 0.
+                        this.other.velocityX += (this.deltaX != 0 && this.deltaT > 0) ? this.deltaX / this.deltaT * 2 : 0;
+                        this.other.velocityY += (this.deltaY != 0 && this.deltaT > 0) ? this.deltaY / this.deltaT * 2 : 0;
+                }
                 this.x = nx;
                 this.y = ny;
                 this.needsRedraw = true;

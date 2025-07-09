@@ -33,6 +33,7 @@
                 const canvasW = 800;
                 const canvasH = 800;
                 const gravity = 0.1;
+                const posDelta_checks_per_second = 25;
 
                 const bgCanvas = document.getElementById("background");
                 const fgCanvas = document.getElementById("foreground");
@@ -134,7 +135,7 @@
                         input.mouseX = e.clientX;
                         input.mouseY = e.clientY;
                         if (selectedBall?.isDragging && input.mousePressed) {
-                                selectedBall.drag(input.mouseX, input.mouseY);
+                                selectedBall.drag(input.mouseX, input.mouseY, posDelta_checks_per_second);
                         }
                 });
 

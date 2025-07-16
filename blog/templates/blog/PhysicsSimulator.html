@@ -9,6 +9,8 @@
                 body { margin: 0; background-color: white; }
                 input { width: 80px; margin-top: 5px; }
                 #ui-panel { position: relative; z-index: 10; background: #f8f8f8; width: 800px; height: 35px; }
+                #spawn-panel {position: relative; margin-top: -800px; margin-left: 800px; z-index: 2;}
+                #spawnBtn {width: 80; height: 30px;}
                 #canvas-wrapper { position: relative; width: 800px; height: 800px; }
                 canvas { position: absolute; left: 0; top: 0; display: block; }
                 #background { z-index: 0; background-color: black; }
@@ -26,6 +28,9 @@
                 <label>VelX(px/f): <input type="number" id="initVX" value="0"></label>
                 <button id="launchBtn">FIRE!</button>
         </div>
+        <div id="spawn-panel">
+                <button id="spawnBtn">Spawn Button</button>
+        </div>
 
         <script type="module">
                 import { Ball } from "{% static 'js/ball.js' %}";
@@ -33,6 +38,7 @@
                 const canvasW = 800;
                 const canvasH = 800;
                 const gravity = 0.1;
+                const posDelta_checks_per_second = 25;
 
                 const bgCanvas = document.getElementById("background");
                 const fgCanvas = document.getElementById("foreground");
@@ -134,7 +140,7 @@
                         input.mouseX = e.clientX;
                         input.mouseY = e.clientY;
                         if (selectedBall?.isDragging && input.mousePressed) {
-                                selectedBall.drag(input.mouseX, input.mouseY);
+                                selectedBall.drag(input.mouseX, input.mouseY, posDelta_checks_per_second);
                         }
                 });
 
@@ -153,6 +159,10 @@
                         selectedBall.needsRedraw = true;
                         fgCanvas.style.cursor = "default";
                 });
+
+                document.getElementById("spawnBtn").addEventListener("click", () =>{
+                        balls.push(new Ball(fgCtx, 0, 0));
+                })
 
                 drawGrid();
                 requestAnimationFrame(frame);

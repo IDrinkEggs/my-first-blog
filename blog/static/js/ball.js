@@ -55,6 +55,7 @@ export class Ball {
                 this.needsRedraw = true;
         }
 
+        //Checks collisions, checks if the object is in the floor, if it's falling
         update(gravity, canvasW, canvasH, mouseX, mouseY, others = []) {
 
                 //Velocity calculation
@@ -142,11 +143,11 @@ export class Ball {
                 this.needsRedraw = true;
         }
 
-        drag(mouseX, mouseY) {
+        drag(mouseX, mouseY, checkEverySec) {
 
                 var nx = mouseX - this.offsetX;
                 var ny = mouseY - this.offsetY;
-                if (performance.now() - this.prevTime > 100) { //Checks how much it would move every 100 miliseconds
+                if (performance.now() - this.prevTime > checkEverySec) { //Checks how much it would move every 100 miliseconds
                         this.prevX = mouseX;
                         this.prevY = mouseY;
                         this.prevTime = performance.now();
@@ -154,8 +155,10 @@ export class Ball {
                 if (this.isColliding) {
                         //If the ball gets moved perfectly verticle/horizontal while it's colliding
                         //then the prevX/Y becomes 0, which would result in a NAN value because there division by 0.
-                        this.other.velocityX += (this.deltaX != 0 && this.deltaT > 0) ? this.deltaX / this.deltaT * 2 : 0;
-                        this.other.velocityY += (this.deltaY != 0 && this.deltaT > 0) ? this.deltaY / this.deltaT * 2 : 0;
+                        this.other.x += this.deltaX;
+                        this.other.y += this.deltaY;
+                        this.other.velocityX += (this.deltaX != 0 && this.deltaT > 0) ? this.deltaX / this.deltaT : 0;
+                        this.other.velocityY += (this.deltaY != 0 && this.deltaT > 0) ? this.deltaY / this.deltaT : 0;
                 }
                 this.x = nx;
                 this.y = ny;

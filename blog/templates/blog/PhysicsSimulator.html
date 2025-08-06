@@ -24,8 +24,8 @@
         </div>
         <div id="ui-panel">
                 <label>InitY(px): <input type="number" id="initY" value="765"></label>
-                <label>VelY(px/f): <input type="number" id="initV" value="-10"></label>
-                <label>VelX(px/f): <input type="number" id="initVX" value="0"></label>
+                <label>VelY(px/f): <input type="number" id="initV" value="0"></label>
+                <label>VelX(px/f): <input type="number" id="initVX" value="1"></label>
                 <button id="launchBtn">FIRE!</button>
         </div>
         <div id="spawn-panel">
@@ -61,6 +61,8 @@
                         new Ball(fgCtx, 350, 200),
                 ];
                 window.balls = balls;
+
+                const fixList = [];
                 
                 let selectedBall = balls[0];
 
@@ -84,6 +86,10 @@
                 function frame() {
                         // 各ボールの描画
                         updateState();
+                        if (selectedBall?.isDragging && input.mousePressed) {
+                                const otherBallsList = balls.filter(b => b !== selectedBall);
+                                selectedBall.drag(input.mouseX, input.mouseY, posDelta_checks_per_second, otherBallsList);
+                        }
                         for (const ball of balls) {
                                 ball.draw();   
                         }
@@ -139,9 +145,7 @@
                 fgCanvas.addEventListener("mousemove", (e) => {
                         input.mouseX = e.clientX;
                         input.mouseY = e.clientY;
-                        if (selectedBall?.isDragging && input.mousePressed) {
-                                selectedBall.drag(input.mouseX, input.mouseY, posDelta_checks_per_second);
-                        }
+                        
                 });
 
                 document.getElementById("launchBtn").addEventListener("click", () => {
@@ -162,6 +166,7 @@
 
                 document.getElementById("spawnBtn").addEventListener("click", () =>{
                         balls.push(new Ball(fgCtx, 0, 0));
+                        selectedBall = balls[balls.length - 1];
                 })
 
                 drawGrid();

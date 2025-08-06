@@ -33,7 +33,11 @@ export class Ball {
                 this.isFalling = false; //stops the balls in place to play and test with
                 this.needsRedraw = true;
                 this.isColliding = false;
+                this.bottomCollision = false;
                 this.other;
+
+                //Color variable
+                this.color = `rgb(${Math.floor(Math.random()*226+30)}, ${Math.floor(Math.random()*226+30)}, ${Math.floor(Math.random()*226+30)})`;
         }
 
         // NeedsRedraw() {
@@ -48,7 +52,10 @@ export class Ball {
                 if (!this.needsRedraw) {
                         return;
                 }
-                this.ctx.fillStyle = "rgb(200, 0, 0)";
+                this.x = Math.floor(this.x);
+                this.y = Math.floor(this.y);
+                //Generate's random color
+                this.ctx.fillStyle = this.color;
                 this.ctx.clearRect(this.oldX, this.oldY, this.size, this.size);
                 this.ctx.fillRect(this.x, this.y, this.size, this.size);
                 this.oldX = this.x; this.oldY = this.y;
@@ -62,40 +69,41 @@ export class Ball {
                 const now = performance.now();
                 this.deltaY = mouseY - this.prevY;
                 this.deltaX = mouseX - this.prevX;
-                this.deltaT = (now - this.prevTime) / 3;//why divide by 3?
+                this.deltaT = (now - this.prevTime)/3;//why divide by 3?
                 this.y += this.velocityY;
                 this.x += this.velocityX;
 
-                if (others.some(ball => this.CheckColision(ball))) {
-                        this.isColliding = true;
-                        this.velocityX = 0;
-                        this.velocityY = 0;
-                        console.log("Colliding!!");
-                }
-                else {
-                        console.log("Not colliding!");
-                        this.isColliding = false;
+                if (others.some(ball => this.CheckColision(ball) && !ball.isDragging)) {
+                        let holdVelocity = this.velocityX;
+                        this.velocityX = this.other.velocityX;
+                        this.other.velocityX = holdVelocity;
+                        holdVelocity = this.velocityY;
+                        this.velocityY = this.other.velocityY;
+                        this.other.velocityY = holdVelocity;
+                        //console.log("Colliding!!");
                 }
 
+                //if(this.velocityY == 0) this.isFalling = false;
                 //if on the side of canvas
                 this.x = Math.max(0, Math.min(canvasW - this.size, Math.floor(this.x)));
-
-                if (this.y >= canvasH - this.size) { //if on floorz
-                        this.y = canvasH - this.size;
-                        this.isFalling = false;
+                this.velocityX = 0;
+                
+                if (this.isFalling && !this.isDragging) {
+                        
+                        this.velocityY += gravity;
+                        this.y = Math.floor(this.y);
+                }
+                
+                if (this.y >= canvasH - this.size || this.bottomCollision) { //if on floorz
+                        if (this.y >= canvasH - this.size){
+                                this.y = canvasH - this.size;
+                                this.isFalling = false;}
+                        
                         if(!this.velocityY == 0){
                                 this.velocityY = 0;
                         }
                 }else{
                         this.isFalling = true;
-                }
-                
-                
-                
-                if (this.isFalling && !this.isDragging) {
-
-                        this.velocityY += gravity;
-                        this.y = Math.floor(this.y);
                 }
         }
 
@@ -121,7 +129,8 @@ export class Ball {
                         `X-velocity: ${this.velocityX.toFixed(2)} px/frame`,
                         `Y-velocity: ${this.velocityY.toFixed(2)} px/frame`,
                         `mouse: (${mouseX}, ${mouseY})`,
-                        `isColliding: ${this.isColliding}`
+                        `isColliding: ${this.isColliding}`,
+                        `isFalling: ${this.isFalling}`
                 ];
         }
 
@@ -141,18 +150,21 @@ export class Ball {
                 this.prevY = mouseY;
                 this.prevTime = performance.now();
                 this.needsRedraw = true;
+                this.velocityX = 0;
+                this.velocityY = 0;
         }
 
-        drag(mouseX, mouseY, checkEverySec) {
+        drag(mouseX, mouseY, checkEverySec, otherBallList) {
 
                 var nx = mouseX - this.offsetX;
                 var ny = mouseY - this.offsetY;
+                //this.velocityX = 0; this.velocityY = 0;
                 if (performance.now() - this.prevTime > checkEverySec) { //Checks how much it would move every 100 miliseconds
                         this.prevX = mouseX;
                         this.prevY = mouseY;
                         this.prevTime = performance.now();
                 }
-                if (this.isColliding) {
+                if (otherBallList.some(ball => this.CheckColision(ball))) {
                         //If the ball gets moved perfectly verticle/horizontal while it's colliding
                         //then the prevX/Y becomes 0, which would result in a NAN value because there division by 0.
                         this.other.x += this.deltaX;
@@ -240,14 +252,55 @@ export class Ball {
                         ((ballx1 <= OBx2 && ballx1 > OBx1)  &&  ((OBy1 <= bally1 && bally1 <= OBy2) || (OBy1 <= bally2 && bally2 <= OBy2))))
                         {
                                 //The check conditions are similar with N/S and W/E. Thought that was interesting
+                                this.FixCollision(otherBall);
+                                this.isColliding = true;
                                 this.other = otherBall;
+                                this.other.isColliding = true;
                                 return true;
                 }
                 else {
+                        this.isColliding = false;
+                        this.bottomCollision = false;
+                        this.other = null;
                         return false;
                 }
         }
 
+        FixCollision(otherball){ //Push the other ball out of it self
+                let xhalfwayPoint = this.x + Math.floor(this.size/2);
+                // console.log(this.x);
+                // console.log(xhalfwayPoint);
+                // console.log(this.x+35);
+                let yhalfwayPoint = this.y + Math.floor(this.size/2);
+                //Fix x-axis collisions
+                if (otherball.x+35 <= xhalfwayPoint){ //other ball colliding from left
+                        let xOverlap = Math.floor(otherball.x - this.x+this.size);
+                        console.log("Left");
+                        console.log(xOverlap);
+                        otherball.x -= xOverlap;
+                }
+                else if (xhalfwayPoint <= otherball.x){ //other ball colliding from right
+                        let xOverlap = Math.floor(this.x - otherball.x+otherball.size);
+                        console.log("Right");
+                        console.log(xOverlap);
+                        otherball.x += xOverlap;
+                }
+                //Fix y-axis collisions
+                if (otherball.y+35 <= yhalfwayPoint){ //other ball colliding from top
+                        let yOverlap = Math.floor(otherball.y - this.y+this.size);
+                        console.log("Top");
+                        console.log(yOverlap);
+                        otherball.y -= yOverlap;
+                }
+                else if (yhalfwayPoint <= otherball.y){ //other ball colliding from botom
+                        let yOverlap = Math.floor(this.y - otherball.y+otherball.size);
+                        console.log("Bottom");
+                        this.bottomCollision = true;
+                        this.isFalling = false;
+                        console.log(yOverlap);
+                        otherball.y += yOverlap;
+                }
+        }
 
 
 }

@@ -38,7 +38,7 @@
                 const canvasW = 800;
                 const canvasH = 800;
                 const gravity = 0.1;
-                const posDelta_checks_per_millisecond = 5;
+                const posDelta_checks_per_millisecond = 1;
 
                 const bgCanvas = document.getElementById("background");
                 const fgCanvas = document.getElementById("foreground");
@@ -84,14 +84,14 @@
                                 const otherBallsList = balls.filter(b => b !== ball);
                                 ball.update(gravity, canvasW, canvasH, otherBallsList); //Collision checked
                                 //Adding on the G_fixList >>>
-                                if(ball.isOverlapped){
+                                if(ball.isOverlapped && !ball.isStatic){
                                         AddToG_Fixlist(ball);                          
                                 }
                                 //<<< Adding on the G_fixList
                         }
                         if(G_fixList.length > 0) {console.log(`G_fixList.length: ${G_fixList.length}`)};
-                        if(G_fixList.length > 1){
-                                for(let i=0; i < G_fixList.length-1; i++){
+                        if(G_fixList.length > 0){
+                                for(let i=0; i < G_fixList.length; i++){
                                         const ball = G_fixList[0];
                                         for(const otherBall of ball.fixList){
                                                 console.log(`FixCollision Called from: ${ball.id}`);
@@ -101,29 +101,26 @@
                                         G_fixList.splice(0, 1,);//remove 1 item from index 0
                                 }
                         }
-
-                        if(G_fixList.length == 1){//Output's error when the if statement isnt here
-                                //Every other item has fixed the last item's position so it's overlapped flag can be removed
-                                G_fixList[0].isOverlapped = false;
-                        }
-                        // if(balls[0].isColliding){
-                        //         balls[0].FixCollision(balls[1]);
-                        // }
                         G_fixList = [];
                 }
 
+                //Adds to the list in priority order >>>
+                //Priority order:
+                //-Dragged object
+                //-Moving object
+                //Note: Non-moving objects are not added because they can't collide if they arn't moving
                 function AddToG_Fixlist(insertBall){
                         console.log(`Added ball${insertBall.id} to G_fixList`);
                         if(G_fixList.length == 0){
                                 G_fixList.push(insertBall);
                         }
                         else{
-                                const neighbor_ball = G_fixList.find(ball => insertBall.y >= ball.y)
-                                if(neighbor_ball == undefined){
+                                const array_NeighborObject = G_fixList.find(ball => insertBall.y >= ball.y)
+                                if(array_NeighborObject == undefined){
                                         G_fixList.push(insertBall);
                                 }
                                 else{                                        
-                                        const index = G_fixList.indexOf(neighbor_ball);
+                                        const index = G_fixList.indexOf(array_NeighborObject);
                                         G_fixList.splice(index, 0, insertBall);
                                 }
                         }

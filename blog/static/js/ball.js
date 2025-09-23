@@ -83,12 +83,6 @@ export class Ball {
                 //         this.prevTime = performance.now();
                 // }
                 //<<< Recording prev x & y positions
-
-                //Applying Velocity >>>
-                this.y += this.velocityY;
-                this.x += this.velocityX;
-                this.isStatic = this.velocityX == 0 && this.velocityY == 0;
-                //<<< Applying Velocity
                 
                 //Add's free fall acceleration >>>
                 if (this.isFalling && !this.isDragging) {
@@ -97,6 +91,12 @@ export class Ball {
                         this.y = Math.floor(this.y);
                 }
                 //<<< Add's free fall acceleration
+
+                //Applying Velocity >>>
+                this.y += this.velocityY;
+                this.x += this.velocityX;
+                this.isStatic = this.velocityX == 0 && this.velocityY == 0;
+                //<<< Applying Velocity
 
                 //Canvas boundary checks >>>
                 //--if on the floor
@@ -123,8 +123,13 @@ export class Ball {
                 //<<< Canvas boundary checks
 
                 //Checking Collisions >>>
-                if (others.some(ball => this.CheckColision(ball) && !ball.isDragging)) {
+                if (others.some(ball => this.CheckCollision(ball) && !ball.isDragging)) {
                         
+                }
+                else{
+                        this.isOverlapped = false;
+                        this.isColliding = false;
+                        this.bottomCollided = false;
                 }
                 //<<< Checking Collisions
         }
@@ -138,11 +143,12 @@ export class Ball {
                         `mouse: (${mouseX}, ${mouseY})`,
                         `isColliding: ${this.isColliding}`,
                         `isFalling: ${this.isFalling}`,
-                        `isOverlapped: ${this.isOverlapped}`
+                        `isOverlapped: ${this.isOverlapped}`,
+                        `bottomCollided: ${this.bottomCollided}`
                 ];
         }
 
-        CheckColision(otherBall) { //v is for vertex
+        CheckCollision(otherBall) { //v is for vertex
                 let ballx1 = this.x;
                 let bally1 = this.y;
                 let ballx2 = this.x + this.size;
@@ -159,54 +165,31 @@ export class Ball {
                 //         ((OBy1 < ballv3 && ballv3 < OBy2) || (OBy1 < ballv4 && ballv4 < OBy2))) {
                 //         return true;
                 // }
-                if (
-                        //             ball                       OB
-                        //               N                            N
-                        //      x1,y1---------x2,y1        OBx1,OBy1-----OBx2,OBy1
-                        //        |             |              |             |
-                        //        |             |              |             |
-                        //     W  |             |  E         W |             |  E
-                        //        |             |              |             |
-                        //        |             |              |             |
-                        //      x1,y2---------x2,y2        OBx1,OBy2-----OBx2,OBy2
-                        //               S                            S
-                        //CARE FULL, CHANGING THE SCREEN ORIGIN FROM TOP LEFT BEING (0,0) WILL MESS UP WITH THIS COLLISION CHECK
+                const xOverlap =  Math.min(ballx2, OBx2) - Math.max(ballx1, OBx1);
+                const yOverlap =  Math.min(bally2, OBy2) - Math.max(bally1, OBy1);
+                const check_isOverlaped = xOverlap > 0 && yOverlap > 0;
+                const check_isCollided = xOverlap == 0 || yOverlap == 0;
 
-                        //Version 2. Fixed edge case above
-                        //North side checking for otherball South side
-                        (((OBx1 <= ballx1 && ballx1 <= OBx2) || (OBx1 <= ballx2 && ballx2 <= OBx2))  &&  (bally1 <= OBy2 && bally1 > OBy1)) ||
-                        //South side checking for otherball North side
-                        (((OBx1 <= ballx1 && ballx1 <= OBx2) || (OBx1 <= ballx2 && ballx2 <= OBx2))  &&  (bally2 >= OBy1 && bally2 < OBy2)) ||
-                        //East side checking for otherball West side
-                        ((ballx2 >= OBx1 && ballx2 < OBx2)  &&  ((OBy1 <= bally1 && bally1 <= OBy2) || (OBy1 <= bally2 && bally2 <= OBy2))) ||
-                        //West side checking for otherball East side
-                        ((ballx1 <= OBx2 && ballx1 > OBx1)  &&  ((OBy1 <= bally1 && bally1 <= OBy2) || (OBy1 <= bally2 && bally2 <= OBy2))))
-                        {
-                                //console.log("Colliding!");
-                                if(((OBx1 < ballx1 && ballx1 < OBx2) || (OBx1 < ballx2 && ballx2 < OBx2)) || ((OBy1 < bally1 && bally1 < OBy2) || (OBy1 < bally2 && bally2 < OBy2))){
-                                        console.log("Overlapping!");
-                                        this.isOverlapped = true;
-                                        if(!this.fixList.includes(otherBall)){
-                                                this.fixList.push(otherBall);
-                                        }
-                                }
-                                else{
-                                        this.isOverlapped = false;
-                                }
-                                this.isColliding = true;
-                                return true;
+                if (check_isOverlaped){
+                        console.log("Overlapping!");
+                        this.isOverlapped = true;
+                        this.isColliding = true;
+                        if(!this.fixList.includes(otherBall)){
+                                this.fixList.push(otherBall);
+                        }
+                        return true;
                 }
-                else {
+                else if (!check_isOverlaped && check_isCollided) {
+                        this.isOverlapped = false;
+                        this.isColliding = true;
+                        return true;
+                }
+                else if (!check_isOverlaped && !check_isCollided) {
                         //Removes the object it checked with if it's in the fixList >>>
                         if(this.fixList.includes(otherBall)){
                                 this.fixList.splice(this.fixList.indexOf(otherBall), 1);
                         }
                         //<<<
-
-                        this.isColliding = false;
-                        this.isOverlapped = false;
-                        this.bottomCollided = false;
-                        this.other = null;
                         return false;
                 }
         }
@@ -245,8 +228,14 @@ export class Ball {
 
                 //In case the objects' middle points are perfectly on the same axis >>>
                 if(colliderMid_x == selfMid_x && colliderMid_y != selfMid_y){
-                        console.log("Collision Direction: Top");
-                        return "Top";
+                        if (otherball.y < this.y){
+                                console.log("Collision Direction: Top");
+                                return "Top";
+                        }
+                        else if(this.y < otherball.y){
+                                console.log("Collision Direction: Bottom");
+                                return "Bottom";
+                        }
                 }
                 if(colliderMid_y == selfMid_y && colliderMid_x != selfMid_x){
                         
@@ -342,37 +331,6 @@ export class Ball {
                         //<< Catch corner collision              
                 }
                 
-        }
-
-        FixCollision(otherball){
-                //Pushes other ball out of it's self
-                const collision_Dir = this.FindCollisionDir(otherball);
-                console.log(`FixCollision passed thru, with collision_Dir: ${collision_Dir}.`);
-                if(collision_Dir == "Top"){
-                        let yOverLap = (otherball.y + otherball.size) - this.y;
-                        otherball.y -= yOverLap;
-                        if(this.velocityY == 0){
-                                otherball.bottomCollided = true;
-                        }
-                }
-                else if(collision_Dir == "Bottom"){
-                        let yOverLap = (this.y + this.size) - otherball.y;
-                        otherball.y += yOverLap;
-                        if(otherball.velocityY == 0){
-                                this.bottomCollided = true;
-                        }
-                        
-                }
-                else if(collision_Dir == "Right"){
-                        let xOverLap = (this.x + this.size) - otherball.x;
-                        otherball.x += xOverLap;
-                }
-                else if(collision_Dir == "Left"){
-                        let xOverLap = (otherball.x + otherball.size) - this.x;
-                        otherball.x -= xOverLap;
-                }
-                this.isOverlapped = false;
-                otherball.isOverlapped = false;
         }
 
         startDrag(mouseX, mouseY) {

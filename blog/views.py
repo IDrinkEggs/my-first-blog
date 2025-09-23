@@ -3,6 +3,12 @@ from django.utils import timezone
 from .models import Post
 from .forms import PostForm
 
+#All the different content for each subsite is defined here. Any values thats passed into the script, or checks that's
+#performed before the subsite is rendered is written here.
+#These functions are ran in urls.py
+
+def home_page(request):
+    return render(request, 'blog/home_page.html')
 
 def post_list(request):
     posts = Post.objects.filter(published_date__lte=timezone.now()).order_by('published_date')

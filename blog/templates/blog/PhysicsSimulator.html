@@ -11,25 +11,32 @@
                 #ui-panel { position: relative; z-index: 10; background: #f8f8f8; width: 800px; height: 35px; }
                 #spawn-panel {position: relative; margin-top: -800px; margin-left: 800px; z-index: 2;}
                 #spawnBtn {width: 80; height: 30px;}
-                #canvas-wrapper { position: relative; width: 800px; height: 800px; }
+                #canvas-main-wrapper { position: relative; width: 800px; height: 800px; }
                 canvas { position: absolute; left: 0; top: 0; display: block; }
                 #background { z-index: 0; background-color: black; }
                 #foreground { z-index: 1; cursor: default; }
+                #canvas-collision-example-wrapper {position: relative; margin-left: 1200px; margin-top: 90px;}
+                #background2 {background-color:#696E71; width: 600px; height: 600px;}
         </style>
 </head>
 <body>
-        <div id="canvas-wrapper">
-                <canvas id="background"></canvas>
-                <canvas id="foreground"></canvas>
+        <div>
+                <div id="canvas-main-wrapper">
+                        <canvas id="background"></canvas>
+                        <canvas id="foreground"></canvas>
+                </div>
+                <div id="ui-panel">
+                        <label>InitY(px): <input type="number" id="initY" value="765"></label>
+                        <label>VelY(px/f): <input type="number" id="initV" value="0"></label>
+                        <label>VelX(px/f): <input type="number" id="initVX" value="1"></label>
+                        <button id="launchBtn">FIRE!</button>
+                </div>
+                <div id="spawn-panel">
+                        <button id="spawnBtn">Spawn Button</button>
+                </div>
         </div>
-        <div id="ui-panel">
-                <label>InitY(px): <input type="number" id="initY" value="765"></label>
-                <label>VelY(px/f): <input type="number" id="initV" value="0"></label>
-                <label>VelX(px/f): <input type="number" id="initVX" value="1"></label>
-                <button id="launchBtn">FIRE!</button>
-        </div>
-        <div id="spawn-panel">
-                <button id="spawnBtn">Spawn Button</button>
+        <div id="canvas-collision-example-wrapper">
+                <canvas id="background2"></canvas>
         </div>
 
         <script type="module">
@@ -59,10 +66,15 @@
                         //new Ball(fgCtx, 50, 100),
                         new Ball(fgCtx, 200, 300),
                         new Ball(fgCtx, 350, 200),
+                        new Ball(fgCtx, 450, 200),
+                        new Ball(fgCtx, 500, 200),
                 ];
                 window.balls = balls;
                 balls[0].color = "rgb(250,0,0)"; balls[0].id = "Red";
                 balls[1].color = "rgb(0,250,0)"; balls[1].id = "Green";
+                balls[2].color = "rgb(0,0,250)"; balls[2].id = "Blue";
+                balls[3].color = "rgb(250,250,0)"; balls[3].id = "Yellow";
+
 
                 let G_fixList = [];
                 window.G_fixList = G_fixList;
@@ -84,7 +96,7 @@
                                 const otherBallsList = balls.filter(b => b !== ball);
                                 ball.update(gravity, canvasW, canvasH, otherBallsList); //Collision checked
                                 //Adding on the G_fixList >>>
-                                if(ball.isOverlapped && !ball.isStatic){
+                                if(ball.isOverlapped){
                                         AddToG_Fixlist(ball);                          
                                 }
                                 //<<< Adding on the G_fixList
@@ -95,13 +107,55 @@
                                         const ball = G_fixList[0];
                                         for(const otherBall of ball.fixList){
                                                 console.log(`FixCollision Called from: ${ball.id}`);
-                                                ball.FixCollision(otherBall);
+                                                const collision_direction = ball.FindCollisionDir(otherBall); //collision direction for these two objects
+                                                FixCollision(ball, otherBall, collision_direction);
+                                                // let j = 0;
+                                                // while(ball.isOverlapped && j<10){
+                                                //         j++;
+                                                //         ball.CheckCollision(otherBall);
+                                                //         console.log(j);
+                                                // }
+
                                         }
                                         G_fixList[0].isOverlapped = false;
                                         G_fixList.splice(0, 1,);//remove 1 item from index 0
                                 }
                         }
                         G_fixList = [];
+                }
+
+                function FixCollision(selfball, otherball, collision_Dir){
+                        //Pushes itself out of otherball
+                        console.log(`FixCollision passed thru, with collision_Dir: ${collision_Dir}.`);
+                        if (collision_Dir == "Top") {
+                                selectedBall.velocityY = 0;
+                                let yOverLap = (otherball.y + otherball.size) - selfball.y;
+                                selfball.y += yOverLap;
+                                if (selfball.velocityY == 0) {
+                                        otherball.bottomCollided = true;
+                                }
+                        }
+                        else if (collision_Dir == "Bottom") {
+                                selectedBall.velocityY = 0;
+                                let yOverLap = (selfball.y + selfball.size) - otherball.y;
+                                selfball.y -= yOverLap;
+                                if (otherball.velocityY == 0) {
+                                        selfball.bottomCollided = true;
+                                }
+
+                        }
+                        else if (collision_Dir == "Right") {
+                                selectedBall.velocityX = 0;
+                                let xOverLap = (selfball.x + selfball.size) - otherball.x;
+                                selfball.x -= xOverLap;
+                        }
+                        else if (collision_Dir == "Left") {
+                                selectedBall.velocityX = 0;
+                                let xOverLap = (otherball.x + otherball.size) - selfball.x;
+                                selfball.x += xOverLap;
+                        }
+                        selfball.isOverlapped = false;
+                        otherball.isOverlapped = false;
                 }
 
                 //Adds to the list in priority order >>>
@@ -111,19 +165,10 @@
                 //Note: Non-moving objects are not added because they can't collide if they arn't moving
                 function AddToG_Fixlist(insertBall){
                         console.log(`Added ball${insertBall.id} to G_fixList`);
-                        if(G_fixList.length == 0){
+                        if(!insertBall.isStatic){
                                 G_fixList.push(insertBall);
                         }
-                        else{
-                                const array_NeighborObject = G_fixList.find(ball => insertBall.y >= ball.y)
-                                if(array_NeighborObject == undefined){
-                                        G_fixList.push(insertBall);
-                                }
-                                else{                                        
-                                        const index = G_fixList.indexOf(array_NeighborObject);
-                                        G_fixList.splice(index, 0, insertBall);
-                                }
-                        }
+                        else{console.log("Failed to insert ball to G_fixlist");}
                 }
 
                 function frame() {

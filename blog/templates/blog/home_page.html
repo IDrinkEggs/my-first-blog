@@ -1,0 +1,53 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<h1>Who am I</h1>
+<h2>Introduction</h2>
+<p>
+    Hi! I'm Terui Akihiro from CIS currently in highschool, studying web developement in my free time. 
+    I'm an aspiring computer science student, looking to eventually bring technological solutions to real world problems.
+    Currently I'm working on a physics engine to learn about handling a large project and how to apply logical thinking skills
+    to programming. In the past I've used Python and Java to build small projects for problems I wanted to solve in my personal
+    life, like a profit calculator for a game I was playing, and a triginometry calculator for my math class.
+</p>
+<p>All of the information will be updated in a while</p>
+<p>CSS(design) will be updated as well too</p>
+<p>LT大会から来てもらった方え: 物理エンジンを使ってみたいなら下の「Projects」の所から「Physics engnie(WIP)」をクリックしてください。</p>
+<hr>
+
+<div class="row mb-3 ">
+    <h2>Qualifications (Not yet finished)</h2>
+    <ul>
+        <li>Highschool diploma (yet to be completed)</li>
+        <li>Bachelor's in computer science (aspiring)</li>
+        <li>SAT: (yet to be completed)</li>
+        <li>TOEFL: (yet to be completed)</li>
+        <li>AP certificates: (yet to be completed)</li>
+    </ul>
+</div>
+<hr>
+    
+<div class="row mb-3">
+<h2>Accomplishments</h2>
+    <ul>
+        <li>Presented my physics engine in the LT大会(LT taikai)</li>
+    </ul>
+</div>
+<hr>
+    
+<div class="row mb-3">
+    <h2>Projects</h2>
+    <p>Triginometric calculator: (soon to be posted)</p>
+    <a href="{% url 'physics'%}">Physics engine(WIP)</a>
+</div>
+<hr>
+
+<div class="row mb-3">
+    <h2>Programming languages</h2>
+    <ul>
+        <li>Javascript, HTML&CSS</li>
+        <li>Python</li>
+        <li>Java</li>
+    </ul>
+</div>
+    {% endblock %}

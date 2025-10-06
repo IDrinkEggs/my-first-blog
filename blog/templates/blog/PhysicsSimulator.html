@@ -15,8 +15,10 @@
                 canvas { position: absolute; left: 0; top: 0; display: block; }
                 #background { z-index: 0; background-color: black; }
                 #foreground { z-index: 1; cursor: default; }
-                #canvas-collision-example-wrapper {position: relative; margin-left: 1200px; margin-top: 90px;}
-                #background2 {background-color:#696E71; width: 600px; height: 600px;}
+                #canvas-collision-example-wrapper {position: absolute; left: 1200px; top: 90px; margin:auto; width: 600px; height: 600px;}
+                #canvas-CollisionExample {z-index: 0;background-color:#212529;}
+                #canvas-CollisionExampleForeGround{z-index: 1;}
+                #canvas-CollisionExampleForeGround2{z-index: 2;}
         </style>
 </head>
 <body>
@@ -36,7 +38,9 @@
                 </div>
         </div>
         <div id="canvas-collision-example-wrapper">
-                <canvas id="background2"></canvas>
+                <canvas id="canvas-CollisionExample"></canvas>
+                <canvas id="canvas-CollisionExampleForeGround"></canvas>
+                <canvas id="canvas-CollisionExampleForeGround2"></canvas>
         </div>
 
         <script type="module">
@@ -44,7 +48,7 @@
 
                 const canvasW = 800;
                 const canvasH = 800;
-                const gravity = 0.1;
+                const gravity = 980;// 98px/sec
                 const posDelta_checks_per_millisecond = 1;
 
                 const bgCanvas = document.getElementById("background");
@@ -91,10 +95,10 @@
                         }
                 }
 
-                function updateState() {
+                function updateState(currentTime) {
                         for (const ball of balls) {
                                 const otherBallsList = balls.filter(b => b !== ball);
-                                ball.update(gravity, canvasW, canvasH, otherBallsList); //Collision checked
+                                ball.update(gravity, canvasW, canvasH, otherBallsList, currentTime); //Collision checked
                                 //Adding on the G_fixList >>>
                                 if(ball.isOverlapped){
                                         AddToG_Fixlist(ball);                          
@@ -171,9 +175,9 @@
                         else{console.log("Failed to insert ball to G_fixlist");}
                 }
 
-                function frame() {
+                function frame(nowMs) {
                         // 各ボールの描画
-                        updateState();
+                        updateState(nowMs);
                         if (selectedBall?.isDragging && input.mousePressed) {
                                 const otherBallsList = balls.filter(b => b !== selectedBall);
                                 selectedBall.drag(input.mouseX, input.mouseY, posDelta_checks_per_millisecond, otherBallsList);
@@ -275,6 +279,104 @@
 
                 drawGrid();
                 requestAnimationFrame(frame);
+        </script>
+
+        <script type="module">
+                import "{% static 'js/collision_visualizer.js' %}";
+                const collision_canvas = document.getElementById('canvas-CollisionExample');
+                const collision_canvasfg = document.getElementById('canvas-CollisionExampleForeGround');
+                const collision_canvasfg2 = document.getElementById('canvas-CollisionExampleForeGround2');
+                const ctx = collision_canvas.getContext('2d');
+                const fgctx = collision_canvasfg.getContext('2d');
+                const fgctx2 = collision_canvasfg2.getContext('2d');
+                collision_canvas.width = collision_canvasfg.width = 600;
+                collision_canvas.height = collision_canvasfg.height = 600;
+
+                const staticObject = {x:0, y:0, xMax:0, yMax:0, size:80}; //Aimed to be in the centre
+                const movingObject = {x:0, y:0, xMax:80, yMax:80, xVelocity:0, yVelocity:0, size:80};
+                staticObject.x = 600/2 - staticObject.size/2; staticObject.xMax = 600/2 + staticObject.size/2;
+                staticObject.y = 600/2 - staticObject.size/2; staticObject.yMax = 600/2 + staticObject.size/2;
+
+                ctx.beginPath();
+                ctx.lineWidth = 3;
+                
+                //Draws extended edges
+                ctx.strokeStyle = "#6C757D";
+                ctx.moveTo(0, staticObject.y);
+                ctx.lineTo(600, staticObject.y);
+                ctx.moveTo(0, staticObject.yMax);
+                ctx.lineTo(600, staticObject.yMax);
+                ctx.moveTo(staticObject.x, 0);
+                ctx.lineTo(staticObject.x, 600);
+                ctx.moveTo(staticObject.xMax, 0);
+                ctx.lineTo(staticObject.xMax, 600);
+                ctx.stroke();
+
+                //Draws object on top of the lines
+                ctx.beginPath();
+                ctx.strokeStyle = "#FFFFFF";
+                ctx.moveTo(staticObject.x, staticObject.y);
+                ctx.lineTo(staticObject.xMax, staticObject.y);
+                ctx.lineTo(staticObject.xMax, staticObject.yMax);
+                ctx.lineTo(staticObject.x, staticObject.yMax);
+                ctx.lineTo(staticObject.x, staticObject.y);
+                ctx.stroke();
+
+                const deltaTime = 16.67;//In seconds. Assuming it's running at 60fps per second
+                let mouseDown = false;
+
+                fgctx.beginPath();
+                //pass in color as a string
+                function drawObject(object, canvasCtx, canvasLayer, color){
+                        canvasCtx.clearRect(0, 0, canvasLayer.width, canvasLayer.height);
+                        canvasCtx.beginPath();
+                        canvasCtx.strokeStyle = color;
+                        canvasCtx.moveTo(object.x, object.y);
+                        canvasCtx.lineTo(object.x, object.yMax);
+                        canvasCtx.lineTo(object.xMax, object.yMax);
+                        canvasCtx.lineTo(object.xMax, object.y);
+                        canvasCtx.lineTo(object.x, object.y);
+                        canvasCtx.stroke();
+                }
+                drawObject(movingObject, fgctx, collision_canvasfg, "white");
+
+                function drawResults(){
+                        //Erase previous drawing
+                        times = Swept_AABB_Collision_Check(movingObject, staticObject, deltaTime);
+                        if (times == null){
+                                return
+                        }
+                        
+                }
+
+                let mouseX = null; let mouseY = null;
+                collision_canvasfg.addEventListener("mousedown", (e) => {mouseDown = true;
+                        const rect = collision_canvasfg.getBoundingClientRect();
+                        mouseX = e.clientX - rect.left;
+                        mouseY = e.clientY - rect.top;
+                        movingObject.x = mouseX - movingObject.size/2;
+                        movingObject.y = mouseY - movingObject.size/2;
+                        movingObject.xMax = movingObject.x + movingObject.size;
+                        movingObject.yMax = movingObject.y + movingObject.size;
+                        drawObject(movingObject, fgctx, collision_canvasfg, "white");
+                });
+                collision_canvasfg.addEventListener("mouseup", (e) => {mouseDown = false});
+                collision_canvasfg.addEventListener("mousemove", (e)=>{
+                        if(mouseDown){
+                                if (mouseX == null || mouseY == null){
+                                        console.log("Error mouse is null");
+                                }
+                                else{
+                                        console.log("passed");
+                                }
+                        }
+                        console.log("Mouse down not entered");
+                })
+
+                function render(){
+                        requestAnimationFrame(render);
+                }
+                requestAnimationFrame(render);
         </script>
 </body>
 </html>

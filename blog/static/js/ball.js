@@ -17,8 +17,11 @@ export class Ball {
                 this.deltaY;
 
                 //Time handling variables
-                this.prevTime = performance.now();
-                this.deltaT;
+                this.currentTime = performance.now();
+                this.prevTime = this.currentTime;
+                this.deltaTime;
+                this.dragPrevTime = 0;
+                this.dragDeltaTIme = 0;
                 
                 //mouse handling variables
                 this.offsetX = 0;
@@ -68,14 +71,16 @@ export class Ball {
         }
 
         //Checks collisions, checks if the object is in the floor, if it's falling
-        update(gravity, canvasW, canvasH, others = []) {
+        update(gravity, canvasW, canvasH, others = [], nowMs) {
 
                 //Recording prev x & y positions >>>
                 const checkEverySec = 50;
+                this.prevTime = this.currentTime;
+                this.currentTime = nowMs;
                 if(!this.isDragging){
                         this.prevX = this.x;
                         this.prevY = this.y;
-                        this.prevTime = performance.now();
+                        this.deltaTime = (this.currentTime-this.prevTime)/1000; //converted to seconds
                 }
                 // if (performance.now() - this.prevTime > checkEverySec) { //Checks how much it has moved every 100 miliseconds
                 //         this.prevX = this.x;
@@ -86,15 +91,16 @@ export class Ball {
                 
                 //Add's free fall acceleration >>>
                 if (this.isFalling && !this.isDragging) {
-                        
-                        this.velocityY += gravity;
+                        //Gravity is d/frame^2. d/frame^2 * frame to get velocity, which we then finally add
+                        this.velocityY += gravity * this.deltaTime;
                         this.y = Math.floor(this.y);
                 }
                 //<<< Add's free fall acceleration
 
                 //Applying Velocity >>>
-                this.y += this.velocityY;
-                this.x += this.velocityX;
+                this.y += this.velocityY * this.deltaTime;
+                this.x += this.velocityX * this.deltaTime;
+                //console.log("delta time:" + this.deltaTime + ". " + this.velocityY * this.deltaTime);
                 this.isStatic = this.velocityX == 0 && this.velocityY == 0;
                 //<<< Applying Velocity
 
@@ -194,8 +200,8 @@ export class Ball {
                 }
         }
 
-        FindCollisionDir(otherball){ //Push the other ball out of it self
-                //s = self(collided), o = other(collider)
+        FindCollisionDir(otherball){ //Finds the direction the ball collided from.
+                //Splits the static object into 
                 const selfMid_x = (this.prevX + this.size)/2;
                 const selfMid_y = (this.prevY + this.size)/2;
                 const colliderMid_x = (otherball.prevX + otherball.size)/2;
@@ -340,7 +346,7 @@ export class Ball {
                 this.offsetY = mouseY - this.y;
                 this.prevX = mouseX;
                 this.prevY = mouseY;
-                this.prevTime = performance.now();
+                this.dragPrevTime = performance.now();
                 this.needsRedraw = true;
                 this.velocityX = 0;
                 this.velocityY = 0;
@@ -351,18 +357,18 @@ export class Ball {
                 var nx = mouseX - this.offsetX;
                 var ny = mouseY - this.offsetY;
                 //this.velocityX = 0; this.velocityY = 0;
-                if (performance.now() - this.prevTime > checkEverySec) { //Checks how much it would move every 100 miliseconds
+                if (performance.now() - this.dragPrevTime > checkEverySec) { //Checks how much it would move every 100 miliseconds
                         this.prevX = mouseX;
                         this.prevY = mouseY;
-                        this.prevTime = performance.now();
+                        this.dragPrevTime = performance.now();
                 }
                 // if (otherBallList.some(ball => this.CheckColision(ball))) {
                 //         //If the ball gets moved perfectly verticle/horizontal while it's colliding
                 //         //then the prevX/Y becomes 0, which would result in a NAN value because there division by 0.
                 //         this.other.x += this.deltaX;
                 //         this.other.y += this.deltaY;
-                //         this.other.velocityX += (this.deltaX != 0 && this.deltaT > 0) ? this.deltaX / this.deltaT : 0;
-                //         this.other.velocityY += (this.deltaY != 0 && this.deltaT > 0) ? this.deltaY / this.deltaT : 0;
+                //         this.other.velocityX += (this.deltaX != 0 && this.deltaTime > 0) ? this.deltaX / this.deltaTime : 0;
+                //         this.other.velocityY += (this.deltaY != 0 && this.deltaTime > 0) ? this.deltaY / this.deltaTime : 0;
                 // }
                 this.x = nx;
                 this.y = ny;
@@ -373,10 +379,10 @@ export class Ball {
                 const now = performance.now();
                 this.deltaY = mouseY - this.prevY;
                 this.deltaX = mouseX - this.prevX;
-                this.deltaT = (now - this.prevTime) / 3;
+                this.dragDeltaTime = (now - this.dragPrevTime/1000);
                 //If this.deltaT isn't negative, get Velocity. Other wise Velocity is 0
-                this.velocityY = this.deltaT > 0 ? this.deltaY / this.deltaT : 0;
-                this.velocityX = this.deltaT > 0 ? this.deltaX / this.deltaT : 0;
+                this.velocityY = this.deltaTime > 0 ? this.deltaY / this.deltaTime : 0;
+                this.velocityX = this.deltaTime > 0 ? this.deltaX / this.deltaTime : 0;
                 this.isDragging = false;
                 this.isFalling = true;
                 this.needsRedraw = true;
